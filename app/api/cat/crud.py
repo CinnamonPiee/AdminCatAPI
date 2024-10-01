@@ -1,59 +1,50 @@
-from sqlalchemy.engine import Result
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.core.models.cat import Breed, Kitten
-from .schemas import KittenCreate, KittenUpdate
+from sqlalchemy.future import select
+from app.core.models import Breed, Kitten
+from schemas import KittenCreate, KittenUpdate
 
 
-def get_breeds(db: Session):
-    return db.query(Breed).all()
-
-# Получение всех котят
-
-
-def get_kittens(db: Session):
-    return db.query(Kitten).all()
-
-# Получение котят определенной породы
+async def get_breeds(session: AsyncSession):
+    result = await session.execute(select(Breed))
+    return result.scalars().all()
 
 
-def get_kittens_by_breed(db: Session, breed_id: int):
-    return db.query(Kitten).filter(Kitten.breed_id == breed_id).all()
-
-# Получение информации о котенке
-
-
-def get_kitten(db: Session, kitten_id: int):
-    return db.query(Kitten).filter(Kitten.id == kitten_id).first()
-
-# Добавление котенка
+async def get_kittens(session: AsyncSession):
+    result = await session.execute(select(Kitten))
+    return result.scalars().all()
 
 
-def create_kitten(db: Session, kitten: KittenCreate):
+async def get_kittens_by_breed(session: AsyncSession, breed_id: int):
+    result = await session.execute(select(Kitten).filter(Kitten.breed_id == breed_id))
+    return result.scalars().all()
+
+
+async def get_kitten(session: AsyncSession, kitten_id: int):
+    result = await session.execute(select(Kitten).filter(Kitten.id == kitten_id))
+    return result.scalar_one_or_none()
+
+
+async def create_kitten(session: AsyncSession, kitten: KittenCreate):
     db_kitten = Kitten(**kitten.dict())
-    db.add(db_kitten)
-    db.commit()
-    db.refresh(db_kitten)
+    session.add(db_kitten)
+    await session.commit()
+    await session.refresh(db_kitten)
     return db_kitten
 
-# Обновление информации о котенке
 
-
-def update_kitten(db: Session, kitten_id: int, kitten: KittenUpdate):
-    db_kitten = get_kitten(db, kitten_id)
+async def update_kitten(session: AsyncSession, kitten_id: int, kitten: KittenUpdate):
+    db_kitten = await get_kitten(session, kitten_id)
     if db_kitten:
         for key, value in kitten.dict().items():
             setattr(db_kitten, key, value)
-        db.commit()
-        db.refresh(db_kitten)
+        await session.commit()
+        await session.refresh(db_kitten)
     return db_kitten
 
-# Удаление котенка
 
-
-def delete_kitten(db: Session, kitten_id: int):
-    db_kitten = get_kitten(db, kitten_id)
+async def delete_kitten(session: AsyncSession, kitten_id: int):
+    db_kitten = await get_kitten(session, kitten_id)
     if db_kitten:
-        db.delete(db_kitten)
-        db.commit()
+        await session.delete(db_kitten)
+        await session.commit()
     return db_kitten
