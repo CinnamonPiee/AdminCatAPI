@@ -7,7 +7,6 @@ from .base import Base
 class Breed(Base):
     __tablename__ = 'breeds'
 
-    id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True)
 
     kittens = relationship("Kitten", back_populates="breed")
@@ -16,7 +15,6 @@ class Breed(Base):
 class Kitten(Base):
     __tablename__ = 'kittens'
 
-    id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True)
     color = Column(String, index=True)
     age = Column(Integer)
